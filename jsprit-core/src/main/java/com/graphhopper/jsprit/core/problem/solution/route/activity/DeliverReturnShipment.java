@@ -17,36 +17,45 @@
  */
 package com.graphhopper.jsprit.core.problem.solution.route.activity;
 
+import com.graphhopper.jsprit.core.problem.Capacity;
 import com.graphhopper.jsprit.core.problem.Location;
-import com.graphhopper.jsprit.core.problem.job.Delivery;
+import com.graphhopper.jsprit.core.problem.job.ReturnShipment;
 
-public final class DeliverService extends AbstractDeliveryActivity<Delivery> {
+public final class DeliverReturnShipment extends AbstractDeliveryActivity<ReturnShipment> {
 
-
-    public DeliverService(Delivery delivery) {
-        super(delivery);
+    public DeliverReturnShipment(ReturnShipment shipment) {
+        super(shipment);
     }
 
-    private DeliverService(DeliverService deliveryActivity) {
-        super(deliveryActivity);
+    private DeliverReturnShipment(DeliverReturnShipment deliveryShipmentActivity) {
+        super(deliveryShipmentActivity);
     }
 
     @Override
     public String getName() {
-        return getJob().getType();
+        return "deliverReturnShipment";
     }
 
     @Override
     public Location getLocation() {
-        return getJob().getLocation();
-    }
-    @Override
-    public TourActivity duplicate() {
-        return new DeliverService(this);
+        return getJob().getDeliveryLocation();
     }
 
     @Override
     public double getOperationTime() {
-        return getJob().getServiceDuration();
+        return getJob().getDeliveryServiceTime() + getJob().getBackhaulPickupServiceTime();
     }
+
+    @Override
+    public TourActivity duplicate() {
+        return new DeliverReturnShipment(this);
+    }
+
+    @Override
+    public Capacity getSize() {
+        // Nothing put down on delivery
+        return Capacity.createNullCapacity(super.getSize().getNuOfDimensions());
+    }
+
+
 }

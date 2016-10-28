@@ -27,15 +27,16 @@ import com.graphhopper.jsprit.core.problem.Capacity;
 import com.graphhopper.jsprit.core.problem.Location;
 import com.graphhopper.jsprit.core.problem.SelfJobActivityFactory;
 import com.graphhopper.jsprit.core.problem.Skills;
-import com.graphhopper.jsprit.core.problem.solution.route.activity.DeliverShipment;
-import com.graphhopper.jsprit.core.problem.solution.route.activity.PickupShipment;
+import com.graphhopper.jsprit.core.problem.solution.route.activity.BackhaulReturnShipment;
+import com.graphhopper.jsprit.core.problem.solution.route.activity.DeliverReturnShipment;
+import com.graphhopper.jsprit.core.problem.solution.route.activity.PickupReturnShipment;
 import com.graphhopper.jsprit.core.problem.solution.route.activity.TimeWindow;
 import com.graphhopper.jsprit.core.problem.solution.route.activity.TimeWindowsImpl;
 
 
 /**
- * Shipment is an implementation of Job and consists of a pickup and a delivery
- * of something.
+ * TODO Shipment is an implementation of Job and consists of a pickup and a
+ * delivery of something.
  * <p>
  * <p>
  * It distinguishes itself from {@link Service} as two locations are involved a
@@ -56,11 +57,9 @@ import com.graphhopper.jsprit.core.problem.solution.route.activity.TimeWindowsIm
  * <p>
  * Note that two shipments are equal if they have the same id.
  *
- * @author schroeder
+ * @author balage
  */
-public class Shipment extends AbstractJob implements SelfJobActivityFactory {
-
-
+public class ReturnShipment extends AbstractJob implements SelfJobActivityFactory {
 
 
     /**
@@ -74,11 +73,17 @@ public class Shipment extends AbstractJob implements SelfJobActivityFactory {
 
         private double pickupServiceTime = 0.0;
 
+        private double backhaulPickupServiceTime = 0.0;
+
         private double deliveryServiceTime = 0.0;
+
+        private double backhaulDeliveryServiceTime = 0.0;
 
         private TimeWindow deliveryTimeWindow = TimeWindow.newInstance(0.0, Double.MAX_VALUE);
 
         private TimeWindow pickupTimeWindow = TimeWindow.newInstance(0.0, Double.MAX_VALUE);
+
+        private TimeWindow backhaulTimeWindow = TimeWindow.newInstance(0.0, Double.MAX_VALUE);
 
         private Capacity.Builder capacityBuilder = Capacity.Builder.newInstance();
 
@@ -94,13 +99,15 @@ public class Shipment extends AbstractJob implements SelfJobActivityFactory {
 
         private Location deliveryLocation_;
 
-        protected TimeWindowsImpl deliveryTimeWindows;
-
-        private boolean deliveryTimeWindowAdded = false;
-
-        private boolean pickupTimeWindowAdded = false;
+        private Location backhaulLocation_;
 
         private TimeWindowsImpl pickupTimeWindows;
+        protected TimeWindowsImpl deliveryTimeWindows;
+        private TimeWindowsImpl backhaulTimeWindows;
+
+        private boolean pickupTimeWindowAdded = false;
+        private boolean deliveryTimeWindowAdded = false;
+        private boolean backhaulTimeWindowAdded = false;
 
         private int priority = 2;
 
@@ -125,10 +132,17 @@ public class Shipment extends AbstractJob implements SelfJobActivityFactory {
             pickupTimeWindows.add(pickupTimeWindow);
             deliveryTimeWindows = new TimeWindowsImpl();
             deliveryTimeWindows.add(deliveryTimeWindow);
+            backhaulTimeWindows = new TimeWindowsImpl();
+            backhaulTimeWindows.add(backhaulTimeWindow);
         }
 
         /**
          * Sets pickup location.
+         *
+         * <p>
+         * If no <code>backhaulLocation</code> is specified, it will be same as
+         * the pickupLocation.
+         * </p>
          *
          * @param pickupLocation
          *            pickup location
@@ -136,6 +150,9 @@ public class Shipment extends AbstractJob implements SelfJobActivityFactory {
          */
         public Builder setPickupLocation(Location pickupLocation) {
             pickupLocation_ = pickupLocation;
+            if (backhaulLocation_ == null) {
+                backhaulLocation_ = pickupLocation;
+            }
             return this;
         }
 
@@ -245,6 +262,92 @@ public class Shipment extends AbstractJob implements SelfJobActivityFactory {
         }
 
         /**
+         * Sets backhaul location.
+         *
+         * <p>
+         * If no <code>backhaulLocation</code> is specified, it will be same as
+         * the pickupLocation.
+         * </p>
+         *
+         * @param backhaulLocation
+         *            backhaul location
+         * @return builder
+         */
+        public Builder setBackhaulLocation(Location backhaulLocation) {
+            backhaulLocation_ = backhaulLocation;
+            return this;
+        }
+
+        /**
+         * Sets backhaulPickupServiceTime.
+         * <p>
+         * ServiceTime is intended to be the time the implied activity takes at
+         * the backhaul-location.
+         *
+         * @param serviceTime
+         *            the service time / duration of picking up the backhaul
+         *            cargo of the associated shipment takes
+         * @return builder
+         * @throws IllegalArgumentException
+         *             if servicTime < 0.0
+         */
+        public Builder setBackhaulPickupServiceTime(double serviceTime) {
+            if (serviceTime < 0.0) {
+                throw new IllegalArgumentException("serviceTime must not be < 0.0");
+            }
+            backhaulPickupServiceTime = serviceTime;
+            return this;
+        }
+
+        /**
+         * Sets backhaulDeliveryServiceTime.
+         * <p>
+         * ServiceTime is intended to be the time the implied activity takes at
+         * the backhaul-location.
+         *
+         * @param serviceTime
+         *            the service time / duration of picking up the backhaul
+         *            cargo of the associated shipment takes
+         * @return builder
+         * @throws IllegalArgumentException
+         *             if servicTime < 0.0
+         */
+        public Builder setBackhaulDeliveryServiceTime(double serviceTime) {
+            if (serviceTime < 0.0) {
+                throw new IllegalArgumentException("serviceTime must not be < 0.0");
+            }
+            backhaulDeliveryServiceTime = serviceTime;
+            return this;
+        }
+
+
+        /**
+         * Sets the timeWindow for the pickup, i.e. the time-period in which a
+         * pickup operation is allowed to START.
+         * <p>
+         * <p>
+         * By default timeWindow is [0.0, Double.MAX_VALUE}
+         *
+         * @param timeWindow
+         *            the service time / duration of delivering the backhaul
+         *            cargo of the associated shipment takes
+         * @return builder
+         * @throws IllegalArgumentException
+         *             if timeWindow is null
+         */
+        public Builder setBackhaulTimeWindow(TimeWindow timeWindow) {
+            if (timeWindow == null) {
+                throw new IllegalArgumentException("delivery time-window must not be null");
+            }
+            backhaulTimeWindow = timeWindow;
+            backhaulTimeWindows = new TimeWindowsImpl();
+            backhaulTimeWindows.add(timeWindow);
+            return this;
+        }
+
+
+
+        /**
          * Adds capacity dimension.
          *
          * @param dimensionIndex
@@ -262,28 +365,6 @@ public class Shipment extends AbstractJob implements SelfJobActivityFactory {
             capacityBuilder.addDimension(dimensionIndex, dimensionValue);
             return this;
         }
-
-
-        /**
-         * Builds the shipment.
-         *
-         * @return shipment
-         * @throws IllegalArgumentException
-         *             if neither pickup-location nor pickup-coord is set or if
-         *             neither delivery-location nor delivery-coord is set
-         */
-        public Shipment build() {
-            if (pickupLocation_ == null) {
-                throw new IllegalArgumentException("pickup location is missing");
-            }
-            if (deliveryLocation_ == null) {
-                throw new IllegalArgumentException("delivery location is missing");
-            }
-            capacity = capacityBuilder.build();
-            skills = skillBuilder.build();
-            return new Shipment(this);
-        }
-
 
         public Builder addRequiredSkill(String skill) {
             skillBuilder.addSkill(skill);
@@ -328,6 +409,25 @@ public class Shipment extends AbstractJob implements SelfJobActivityFactory {
             return addPickupTimeWindow(TimeWindow.newInstance(earliest, latest));
         }
 
+
+        public Builder addBackhaulTimeWindow(TimeWindow timeWindow) {
+            if (timeWindow == null) {
+                throw new IllegalArgumentException("time-window arg must not be null");
+            }
+            if (!backhaulTimeWindowAdded) {
+                backhaulTimeWindows = new TimeWindowsImpl();
+                backhaulTimeWindowAdded = true;
+            }
+            backhaulTimeWindows.add(timeWindow);
+            return this;
+        }
+
+        public Builder addBackhaulTimeWindow(double earliest, double latest) {
+            addBackhaulTimeWindow(TimeWindow.newInstance(earliest, latest));
+            return this;
+        }
+
+
         /**
          * Set priority to shipment. Only 1 = high priority, 2 = medium and 3 =
          * low are allowed.
@@ -344,6 +444,27 @@ public class Shipment extends AbstractJob implements SelfJobActivityFactory {
             this.priority = priority;
             return this;
         }
+
+        /**
+         * Builds the shipment.
+         *
+         * @return shipment
+         * @throws IllegalArgumentException
+         *             if neither pickup-location nor pickup-coord is set or if
+         *             neither delivery-location nor delivery-coord is set
+         */
+        public ReturnShipment build() {
+            if (pickupLocation_ == null) {
+                throw new IllegalArgumentException("pickup location is missing");
+            }
+            if (deliveryLocation_ == null) {
+                throw new IllegalArgumentException("delivery location is missing");
+            }
+            capacity = capacityBuilder.build();
+            skills = skillBuilder.build();
+            return new ReturnShipment(this);
+        }
+
     }
 
     private final String id;
@@ -352,9 +473,15 @@ public class Shipment extends AbstractJob implements SelfJobActivityFactory {
 
     private final double deliveryServiceTime;
 
+    private final double backhaulPickupServiceTime;
+
+    private final double backhaulDeliveryServiceTime;
+
     private final TimeWindow deliveryTimeWindow;
 
     private final TimeWindow pickupTimeWindow;
+
+    private final TimeWindow backhaulTimeWindow;
 
     private final Capacity capacity;
 
@@ -366,29 +493,42 @@ public class Shipment extends AbstractJob implements SelfJobActivityFactory {
 
     private final Location deliveryLocation_;
 
+    private final Location backhaulLocation_;
+
     private final TimeWindowsImpl deliveryTimeWindows;
 
     private final TimeWindowsImpl pickupTimeWindows;
 
+    private final TimeWindowsImpl backhaulTimeWindows;
+
     private final int priority;
 
-    Shipment(Builder builder) {
+    ReturnShipment(Builder builder) {
         id = builder.id;
         pickupServiceTime = builder.pickupServiceTime;
         pickupTimeWindow = builder.pickupTimeWindow;
         deliveryServiceTime = builder.deliveryServiceTime;
         deliveryTimeWindow = builder.deliveryTimeWindow;
+        backhaulPickupServiceTime = builder.backhaulPickupServiceTime;
+        backhaulDeliveryServiceTime = builder.backhaulDeliveryServiceTime;
+        backhaulTimeWindow = builder.backhaulTimeWindow;
+
         capacity = builder.capacity;
         skills = builder.skills;
         name = builder.name;
         pickupLocation_ = builder.pickupLocation_;
         deliveryLocation_ = builder.deliveryLocation_;
+        backhaulLocation_ = builder.backhaulLocation_;
+
         deliveryTimeWindows = builder.deliveryTimeWindows;
         pickupTimeWindows = builder.pickupTimeWindows;
+        backhaulTimeWindows = builder.backhaulTimeWindows;
+
         priority = builder.priority;
 
         addLocation(pickupLocation_);
         addLocation(deliveryLocation_);
+        addLocation(backhaulLocation_);
     }
 
     @Override
@@ -438,6 +578,31 @@ public class Shipment extends AbstractJob implements SelfJobActivityFactory {
         return deliveryTimeWindows.getTimeWindows();
     }
 
+    public Location getBackhaulLocation() {
+        return backhaulLocation_;
+    }
+
+    /**
+     * Returns the time-window of backhaul delivery.
+     *
+     * @return time-window of bachaul delivery
+     */
+    public TimeWindow getBackhaulDeliveryTimeWindow() {
+        return backhaulTimeWindows.getTimeWindows().iterator().next();
+    }
+
+    public Collection<TimeWindow> getBackhaulDeliveryTimeWindows() {
+        return backhaulTimeWindows.getTimeWindows();
+    }
+
+    public double getBackhaulPickupServiceTime() {
+        return backhaulPickupServiceTime;
+    }
+
+    public double getBackhaulDeliveryServiceTime() {
+        return backhaulDeliveryServiceTime;
+    }
+
     /**
      * Returns the time-window of pickup.
      *
@@ -476,7 +641,7 @@ public class Shipment extends AbstractJob implements SelfJobActivityFactory {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        Shipment other = (Shipment) obj;
+        ReturnShipment other = (ReturnShipment) obj;
         if (id == null) {
             if (other.id != null) {
                 return false;
@@ -518,10 +683,10 @@ public class Shipment extends AbstractJob implements SelfJobActivityFactory {
     @Override
     public List<AbstractActivity> createActivities() {
         List<AbstractActivity> acts = new ArrayList<AbstractActivity>();
-        acts.add(new PickupShipment(this));
-        acts.add(new DeliverShipment(this));
+        acts.add(new PickupReturnShipment(this));
+        acts.add(new DeliverReturnShipment(this));
+        acts.add(new BackhaulReturnShipment(this));
         return acts;
     }
-
 
 }

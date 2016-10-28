@@ -18,35 +18,37 @@
 package com.graphhopper.jsprit.core.problem.solution.route.activity;
 
 import com.graphhopper.jsprit.core.problem.Location;
-import com.graphhopper.jsprit.core.problem.job.Delivery;
+import com.graphhopper.jsprit.core.problem.job.ReturnShipment;
 
-public final class DeliverService extends AbstractDeliveryActivity<Delivery> {
+public final class PickupReturnShipment extends AbstractPickupActivity<ReturnShipment> {
 
 
-    public DeliverService(Delivery delivery) {
-        super(delivery);
+    public PickupReturnShipment(ReturnShipment shipment) {
+        super(shipment);
     }
 
-    private DeliverService(DeliverService deliveryActivity) {
-        super(deliveryActivity);
+    private PickupReturnShipment(PickupReturnShipment pickupShipmentActivity) {
+        super(pickupShipmentActivity);
     }
 
     @Override
     public String getName() {
-        return getJob().getType();
+        return "pickupReturnShipment";
     }
 
     @Override
     public Location getLocation() {
-        return getJob().getLocation();
-    }
-    @Override
-    public TourActivity duplicate() {
-        return new DeliverService(this);
+        return getJob().getPickupLocation();
     }
 
     @Override
     public double getOperationTime() {
-        return getJob().getServiceDuration();
+        return getJob().getPickupServiceTime();
     }
+
+    @Override
+    public TourActivity duplicate() {
+        return new PickupReturnShipment(this);
+    }
+
 }

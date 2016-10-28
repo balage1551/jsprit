@@ -17,13 +17,17 @@
  */
 package com.graphhopper.jsprit.core.problem.job;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import com.graphhopper.jsprit.core.problem.AbstractActivity;
 import com.graphhopper.jsprit.core.problem.AbstractJob;
 import com.graphhopper.jsprit.core.problem.Capacity;
 import com.graphhopper.jsprit.core.problem.Location;
+import com.graphhopper.jsprit.core.problem.SelfJobActivityFactory;
 import com.graphhopper.jsprit.core.problem.Skills;
+import com.graphhopper.jsprit.core.problem.solution.route.activity.PickupService;
 import com.graphhopper.jsprit.core.problem.solution.route.activity.TimeWindow;
 import com.graphhopper.jsprit.core.problem.solution.route.activity.TimeWindows;
 import com.graphhopper.jsprit.core.problem.solution.route.activity.TimeWindowsImpl;
@@ -37,7 +41,7 @@ import com.graphhopper.jsprit.core.util.Coordinate;
  *
  * @author schroeder
  */
-public class Service extends AbstractJob {
+public class Service extends AbstractJob implements SelfJobActivityFactory {
 
     /**
      * Builder that builds a service.
@@ -86,15 +90,15 @@ public class Service extends AbstractJob {
 
         protected TimeWindowsImpl timeWindows;
 
-		private boolean twAdded = false;
+        private boolean twAdded = false;
 
         private int priority = 2;
 
-		Builder(String id){
-			this.id = id;
-			timeWindows = new TimeWindowsImpl();
-			timeWindows.add(timeWindow);
-		}
+        Builder(String id){
+            this.id = id;
+            timeWindows = new TimeWindowsImpl();
+            timeWindows.add(timeWindow);
+        }
 
         /**
          * Protected method to set the type-name of the service.
@@ -131,8 +135,9 @@ public class Service extends AbstractJob {
          * @throws IllegalArgumentException if serviceTime < 0
          */
         public Builder<T> setServiceTime(double serviceTime) {
-            if (serviceTime < 0)
+            if (serviceTime < 0) {
                 throw new IllegalArgumentException("serviceTime must be greater than or equal to zero");
+            }
             this.serviceTime = serviceTime;
             return this;
         }
@@ -146,13 +151,17 @@ public class Service extends AbstractJob {
          * @throws IllegalArgumentException if dimensionValue < 0
          */
         public Builder<T> addSizeDimension(int dimensionIndex, int dimensionValue) {
-            if (dimensionValue < 0) throw new IllegalArgumentException("capacity value cannot be negative");
+            if (dimensionValue < 0) {
+                throw new IllegalArgumentException("capacity value cannot be negative");
+            }
             capacityBuilder.addDimension(dimensionIndex, dimensionValue);
             return this;
         }
 
         public Builder<T> setTimeWindow(TimeWindow tw){
-            if(tw == null) throw new IllegalArgumentException("time-window arg must not be null");
+            if(tw == null) {
+                throw new IllegalArgumentException("time-window arg must not be null");
+            }
             this.timeWindow = tw;
             this.timeWindows = new TimeWindowsImpl();
             timeWindows.add(tw);
@@ -160,7 +169,9 @@ public class Service extends AbstractJob {
         }
 
         public Builder<T> addTimeWindow(TimeWindow timeWindow) {
-            if(timeWindow == null) throw new IllegalArgumentException("time-window arg must not be null");
+            if(timeWindow == null) {
+                throw new IllegalArgumentException("time-window arg must not be null");
+            }
             if(!twAdded){
                 timeWindows = new TimeWindowsImpl();
                 twAdded = true;
@@ -180,7 +191,9 @@ public class Service extends AbstractJob {
          * @throws IllegalArgumentException if neither locationId nor coordinate is set.
          */
         public T build() {
-            if (location == null) throw new IllegalArgumentException("location is missing");
+            if (location == null) {
+                throw new IllegalArgumentException("location is missing");
+            }
             this.setType("service");
             capacity = capacityBuilder.build();
             skills = skillBuilder.build();
@@ -220,7 +233,9 @@ public class Service extends AbstractJob {
          * @return builder
          */
         public Builder<T> setPriority(int priority) {
-            if(priority < 1 || priority > 3) throw new IllegalArgumentException("incorrect priority. only 1 = high, 2 = medium and 3 = low is allowed");
+            if(priority < 1 || priority > 3) {
+                throw new IllegalArgumentException("incorrect priority. only 1 = high, 2 = medium and 3 = low is allowed");
+            }
             this.priority = priority;
             return this;
         }
@@ -255,15 +270,15 @@ public class Service extends AbstractJob {
         skills = builder.skills;
         name = builder.name;
         location = builder.location;
-		timeWindowManager = builder.timeWindows;
+        timeWindowManager = builder.timeWindows;
         priority = builder.priority;
 
         addLocation(location);
-	}
+    }
 
-	public Collection<TimeWindow> getTimeWindows(){
-		return timeWindowManager.getTimeWindows();
-	}
+    public Collection<TimeWindow> getTimeWindows(){
+        return timeWindowManager.getTimeWindows();
+    }
 
     @Override
     public String getId() {
@@ -331,18 +346,23 @@ public class Service extends AbstractJob {
      */
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         Service other = (Service) obj;
         if (id == null) {
-            if (other.id != null)
+            if (other.id != null) {
                 return false;
-        } else if (!id.equals(other.id))
+            }
+        } else if (!id.equals(other.id)) {
             return false;
+        }
         return true;
     }
 
@@ -368,8 +388,17 @@ public class Service extends AbstractJob {
      *
      * @return priority
      */
+    @Override
     public int getPriority() {
         return priority;
     }
+
+    @Override
+    public List<AbstractActivity> createActivities() {
+        List<AbstractActivity> acts = new ArrayList<AbstractActivity>();
+        acts.add(new PickupService(this));
+        return acts;
+    }
+
 
 }

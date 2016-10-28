@@ -22,6 +22,7 @@ import com.graphhopper.jsprit.core.problem.job.Delivery;
 import com.graphhopper.jsprit.core.problem.job.Pickup;
 import com.graphhopper.jsprit.core.problem.job.Service;
 
+// TODO: Balage1551 - Make it deprecated when all reference is resolved
 public class DefaultTourActivityFactory implements TourActivityFactory {
 
     @Override

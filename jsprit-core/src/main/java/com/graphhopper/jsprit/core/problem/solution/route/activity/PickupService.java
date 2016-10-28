@@ -17,117 +17,42 @@
  */
 package com.graphhopper.jsprit.core.problem.solution.route.activity;
 
-import com.graphhopper.jsprit.core.problem.AbstractActivity;
-import com.graphhopper.jsprit.core.problem.Capacity;
 import com.graphhopper.jsprit.core.problem.Location;
 import com.graphhopper.jsprit.core.problem.job.Pickup;
 import com.graphhopper.jsprit.core.problem.job.Service;
 
-public final class PickupService extends AbstractActivity implements PickupActivity {
-
-    private Service pickup;
-
-    private double arrTime;
-
-    private double depTime;
-
-    private double theoreticalEarliest = 0;
-
-    private double theoreticalLatest = Double.MAX_VALUE;
+public final class PickupService extends AbstractPickupActivity<Service> {
 
     public PickupService(Pickup pickup) {
-        super();
-        this.pickup = pickup;
+        super(pickup);
     }
 
     public PickupService(Service service) {
-        this.pickup = service;
+        super(service);
     }
 
     private PickupService(PickupService pickupActivity) {
-        this.pickup = pickupActivity.getJob();
-        this.arrTime = pickupActivity.getArrTime();
-        this.depTime = pickupActivity.getEndTime();
-        setIndex(pickupActivity.getIndex());
-        this.theoreticalEarliest = pickupActivity.getTheoreticalEarliestOperationStartTime();
-        this.theoreticalLatest = pickupActivity.getTheoreticalLatestOperationStartTime();
+        super(pickupActivity);
     }
 
     @Override
     public String getName() {
-        return pickup.getType();
+        return getJob().getType();
     }
 
     @Override
     public Location getLocation() {
-        return pickup.getLocation();
-    }
-
-    @Override
-    public double getTheoreticalEarliestOperationStartTime() {
-        return theoreticalEarliest;
-    }
-
-    @Override
-    public double getTheoreticalLatestOperationStartTime() {
-        return theoreticalLatest;
-    }
-
-    @Override
-    public void setTheoreticalEarliestOperationStartTime(double earliest) {
-        this.theoreticalEarliest = earliest;
-    }
-
-    @Override
-    public void setTheoreticalLatestOperationStartTime(double latest) {
-        this.theoreticalLatest = latest;
+        return getJob().getLocation();
     }
 
     @Override
     public double getOperationTime() {
-        return pickup.getServiceDuration();
-    }
-
-    @Override
-    public double getArrTime() {
-        return arrTime;
-    }
-
-    @Override
-    public double getEndTime() {
-        return depTime;
-    }
-
-    @Override
-    public void setArrTime(double arrTime) {
-        this.arrTime = arrTime;
-    }
-
-    @Override
-    public void setEndTime(double endTime) {
-        this.depTime = endTime;
+        return getJob().getServiceDuration();
     }
 
     @Override
     public TourActivity duplicate() {
         return new PickupService(this);
-    }
-
-    @Override
-    public Service getJob() {
-        return pickup;
-    }
-
-    public String toString() {
-        return "[type=" + getName() + "][locationId=" + getLocation().getId()
-            + "][size=" + getSize().toString()
-            + "][twStart=" + Activities.round(getTheoreticalEarliestOperationStartTime())
-            + "][twEnd=" + Activities.round(getTheoreticalLatestOperationStartTime()) + "]";
-    }
-
-    @Override
-    public Capacity getSize() {
-        return pickup.getSize();
     }
 
 }

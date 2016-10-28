@@ -18,15 +18,21 @@
 package com.graphhopper.jsprit.core.problem.job;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.graphhopper.jsprit.core.problem.AbstractActivity;
 import com.graphhopper.jsprit.core.problem.Capacity;
+import com.graphhopper.jsprit.core.problem.SelfJobActivityFactory;
 import com.graphhopper.jsprit.core.problem.Skills;
+import com.graphhopper.jsprit.core.problem.solution.route.activity.BreakActivity;
 
 /**
  * Pickup extends Service and is intended to model a Service where smth is LOADED (i.e. picked up) to a transport unit.
  *
  * @author schroeder
  */
-public class Break extends Service {
+public class Break extends Service implements SelfJobActivityFactory {
 
     public static class Builder extends Service.Builder<Break> {
 
@@ -54,11 +60,12 @@ public class Break extends Service {
          * @return pickup
          * @throws IllegalStateException if neither locationId nor coordinate has been set
          */
+        @Override
         public Break build() {
             if (location != null) {
                 variableLocation = false;
             }
-            this.setType("break");
+            setType("break");
             super.capacity = Capacity.Builder.newInstance().build();
             super.skills = Skills.Builder.newInstance().build();
             return new Break(this);
@@ -70,11 +77,19 @@ public class Break extends Service {
 
     Break(Builder builder) {
         super(builder);
-        this.variableLocation = builder.variableLocation;
+        variableLocation = builder.variableLocation;
     }
 
     public boolean hasVariableLocation() {
         return variableLocation;
     }
+
+    @Override
+    public List<AbstractActivity> createActivities() {
+        List<AbstractActivity> acts = new ArrayList<AbstractActivity>();
+        acts.add(BreakActivity.newInstance(this));
+        return acts;
+    }
+
 
 }

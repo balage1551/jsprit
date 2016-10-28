@@ -17,6 +17,11 @@
  */
 package com.graphhopper.jsprit.core.problem.job;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.graphhopper.jsprit.core.problem.AbstractActivity;
+import com.graphhopper.jsprit.core.problem.solution.route.activity.DeliverService;
 
 /**
  * Delivery extends Service and is intended to model a Service where smth is UNLOADED (i.e. delivered) from a transport unit.
@@ -47,9 +52,12 @@ public class Delivery extends Service {
          * @return delivery
          * @throws IllegalArgumentException if neither locationId nor coord is set
          */
+        @Override
         public Delivery build() {
-            if (location == null) throw new IllegalArgumentException("location is missing");
-            this.setType("delivery");
+            if (location == null) {
+                throw new IllegalArgumentException("location is missing");
+            }
+            setType("delivery");
             super.capacity = super.capacityBuilder.build();
             super.skills = super.skillBuilder.build();
             return new Delivery(this);
@@ -59,7 +67,13 @@ public class Delivery extends Service {
 
     Delivery(Builder builder) {
         super(builder);
+    }
 
+    @Override
+    public List<AbstractActivity> createActivities() {
+        List<AbstractActivity> acts = new ArrayList<AbstractActivity>();
+        acts.add(new DeliverService(this));
+        return acts;
     }
 
 }

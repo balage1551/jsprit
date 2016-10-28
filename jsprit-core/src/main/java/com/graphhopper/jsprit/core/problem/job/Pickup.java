@@ -17,6 +17,11 @@
  */
 package com.graphhopper.jsprit.core.problem.job;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.graphhopper.jsprit.core.problem.AbstractActivity;
+import com.graphhopper.jsprit.core.problem.solution.route.activity.PickupService;
 
 /**
  * Pickup extends Service and is intended to model a Service where smth is LOADED (i.e. picked up) to a transport unit.
@@ -49,9 +54,12 @@ public class Pickup extends Service {
          * @return pickup
          * @throws IllegalArgumentException if neither locationId nor coordinate has been set
          */
+        @Override
         public Pickup build() {
-            if (location == null) throw new IllegalArgumentException("location is missing");
-            this.setType("pickup");
+            if (location == null) {
+                throw new IllegalArgumentException("location is missing");
+            }
+            setType("pickup");
             super.capacity = super.capacityBuilder.build();
             super.skills = super.skillBuilder.build();
             return new Pickup(this);
@@ -61,6 +69,14 @@ public class Pickup extends Service {
 
     Pickup(Builder builder) {
         super(builder);
+    }
+
+    @Override
+    public List<AbstractActivity> createActivities() {
+        // This is technically not needed, but make it safer to change the default implementation in Service
+        List<AbstractActivity> acts = new ArrayList<AbstractActivity>();
+        acts.add(new PickupService(this));
+        return acts;
     }
 
 }
