@@ -21,20 +21,19 @@ package com.graphhopper.jsprit.core.problem.job;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.graphhopper.jsprit.core.problem.AbstractActivity;
 import com.graphhopper.jsprit.core.problem.Capacity;
-import com.graphhopper.jsprit.core.problem.SelfJobActivityFactory;
 import com.graphhopper.jsprit.core.problem.Skills;
 import com.graphhopper.jsprit.core.problem.solution.route.activity.BreakActivity;
+import com.graphhopper.jsprit.core.problem.solution.route.activity.JobActivityBase;
 
 /**
  * Pickup extends Service and is intended to model a Service where smth is LOADED (i.e. picked up) to a transport unit.
  *
  * @author schroeder
  */
-public class Break extends Service implements SelfJobActivityFactory {
+public class Break extends Service {
 
-    public static class Builder extends Service.Builder<Break> {
+    public static class Builder extends Service.Builder {
 
         /**
          * Returns a new instance of builder that builds a pickup.
@@ -85,8 +84,8 @@ public class Break extends Service implements SelfJobActivityFactory {
     }
 
     @Override
-    public List<AbstractActivity> createActivities() {
-        List<AbstractActivity> acts = new ArrayList<AbstractActivity>();
+    public List<JobActivityBase> getActivities() {
+        List<JobActivityBase> acts = new ArrayList<>();
         acts.add(BreakActivity.newInstance(this));
         return acts;
     }

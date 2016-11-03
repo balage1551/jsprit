@@ -70,7 +70,7 @@ public class Delivery extends Service {
     }
 
     @Override
-    public List<AbstractActivity> createActivities() {
+    public List<AbstractActivity> getActivities() {
         List<AbstractActivity> acts = new ArrayList<AbstractActivity>();
         acts.add(new DeliverService(this));
         return acts;

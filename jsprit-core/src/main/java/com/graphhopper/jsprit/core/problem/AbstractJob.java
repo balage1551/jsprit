@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.graphhopper.jsprit.core.problem.job.Job;
+import com.graphhopper.jsprit.core.problem.solution.route.activity.JobActivityBase;
 
 /**
  * Created by schroeder on 14.07.14.
@@ -31,6 +32,9 @@ public abstract class AbstractJob implements Job {
     private int index;
 
     protected List<Location> allLocations = new ArrayList<>();
+
+    private List<JobActivityBase> activities = new ArrayList<>();
+
 
     @Override
     public int getIndex() {
@@ -52,5 +56,8 @@ public abstract class AbstractJob implements Job {
         return allLocations;
     }
 
+    public List<JobActivityBase> getActivities() {
+        return activities;
+    }
 
 }

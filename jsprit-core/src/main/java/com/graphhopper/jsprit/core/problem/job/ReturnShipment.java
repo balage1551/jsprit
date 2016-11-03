@@ -681,7 +681,7 @@ public class ReturnShipment extends AbstractJob implements SelfJobActivityFactor
     }
 
     @Override
-    public List<AbstractActivity> createActivities() {
+    public List<AbstractActivity> getActivities() {
         List<AbstractActivity> acts = new ArrayList<AbstractActivity>();
         acts.add(new PickupReturnShipment(this));
         acts.add(new DeliverReturnShipment(this));

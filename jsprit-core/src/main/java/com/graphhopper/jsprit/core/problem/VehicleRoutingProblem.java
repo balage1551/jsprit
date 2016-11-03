@@ -41,6 +41,7 @@ import com.graphhopper.jsprit.core.problem.solution.route.VehicleRoute;
 import com.graphhopper.jsprit.core.problem.solution.route.activity.DefaultShipmentActivityFactory;
 import com.graphhopper.jsprit.core.problem.solution.route.activity.DefaultTourActivityFactory;
 import com.graphhopper.jsprit.core.problem.solution.route.activity.TourActivity;
+import com.graphhopper.jsprit.core.problem.solution.route.activity.TourActivity.JobActivity;
 import com.graphhopper.jsprit.core.problem.vehicle.Vehicle;
 import com.graphhopper.jsprit.core.problem.vehicle.VehicleType;
 import com.graphhopper.jsprit.core.problem.vehicle.VehicleTypeKey;
@@ -108,15 +109,15 @@ public class VehicleRoutingProblem {
         private JobActivityFactory jobActivityFactory = new JobActivityFactory() {
 
             @Override
-            public List<AbstractActivity> createActivities(Job job) {
+            public List<JobActivity> createActivities(Job job) {
                 /*
                  * REMARK - Balage1551 - This was a tricky one. Somehow I felt that the job itself should be able to
                  * create its activities, but can't throw away the JobActivityFactory because it is used in different
                  * ways elsewhere. So I decided to introduce a new interface (SelfJobActivityFactory - better name
                  * needed) and the corresponding jobs should implement this.
                  */
-                if (job instanceof SelfJobActivityFactory) {
-                    return ((SelfJobActivityFactory) job).createActivities();
+                if (job instanceof AbstractJob) {
+                    return ((AbstractJob) job).getActivities();
                 } else {
                     throw new IllegalArgumentException("Self job activity generation not supported for class " + job.getClass().getCanonicalName());
                 }

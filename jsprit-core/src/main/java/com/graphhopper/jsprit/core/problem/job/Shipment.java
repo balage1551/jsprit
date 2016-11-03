@@ -516,7 +516,7 @@ public class Shipment extends AbstractJob implements SelfJobActivityFactory {
     }
 
     @Override
-    public List<AbstractActivity> createActivities() {
+    public List<AbstractActivity> getActivities() {
         List<AbstractActivity> acts = new ArrayList<AbstractActivity>();
         acts.add(new PickupShipment(this));
         acts.add(new DeliverShipment(this));

@@ -21,13 +21,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import com.graphhopper.jsprit.core.problem.AbstractActivity;
 import com.graphhopper.jsprit.core.problem.AbstractJob;
 import com.graphhopper.jsprit.core.problem.Capacity;
 import com.graphhopper.jsprit.core.problem.Location;
-import com.graphhopper.jsprit.core.problem.SelfJobActivityFactory;
 import com.graphhopper.jsprit.core.problem.Skills;
-import com.graphhopper.jsprit.core.problem.solution.route.activity.PickupService;
+import com.graphhopper.jsprit.core.problem.solution.route.activity.JobActivityBase;
+import com.graphhopper.jsprit.core.problem.solution.route.activity.NewServiceAbility;
 import com.graphhopper.jsprit.core.problem.solution.route.activity.TimeWindow;
 import com.graphhopper.jsprit.core.problem.solution.route.activity.TimeWindows;
 import com.graphhopper.jsprit.core.problem.solution.route.activity.TimeWindowsImpl;
@@ -41,16 +40,14 @@ import com.graphhopper.jsprit.core.util.Coordinate;
  *
  * @author schroeder
  */
-public class Service extends AbstractJob implements SelfJobActivityFactory {
+public class Service extends AbstractJob {
 
     /**
      * Builder that builds a service.
      *
      * @author schroeder
      */
-    public static class Builder<T extends Service> {
-
-
+    public static class Builder {
 
 
         /**
@@ -108,8 +105,8 @@ public class Service extends AbstractJob implements SelfJobActivityFactory {
          * @param name the name of service
          * @return the builder
          */
-        protected Builder<T> setType(String name) {
-            this.type = name;
+        protected Builder setType(String name) {
+            type = name;
             return this;
         }
 
@@ -119,7 +116,7 @@ public class Service extends AbstractJob implements SelfJobActivityFactory {
          * @param location location
          * @return builder
          */
-        public Builder<T> setLocation(Location location) {
+        public Builder setLocation(Location location) {
             this.location = location;
             return this;
         }
@@ -134,7 +131,7 @@ public class Service extends AbstractJob implements SelfJobActivityFactory {
          * @return builder
          * @throws IllegalArgumentException if serviceTime < 0
          */
-        public Builder<T> setServiceTime(double serviceTime) {
+        public Builder setServiceTime(double serviceTime) {
             if (serviceTime < 0) {
                 throw new IllegalArgumentException("serviceTime must be greater than or equal to zero");
             }
@@ -150,7 +147,7 @@ public class Service extends AbstractJob implements SelfJobActivityFactory {
          * @return the builder
          * @throws IllegalArgumentException if dimensionValue < 0
          */
-        public Builder<T> addSizeDimension(int dimensionIndex, int dimensionValue) {
+        public Builder addSizeDimension(int dimensionIndex, int dimensionValue) {
             if (dimensionValue < 0) {
                 throw new IllegalArgumentException("capacity value cannot be negative");
             }
@@ -158,17 +155,17 @@ public class Service extends AbstractJob implements SelfJobActivityFactory {
             return this;
         }
 
-        public Builder<T> setTimeWindow(TimeWindow tw){
+        public Builder setTimeWindow(TimeWindow tw) {
             if(tw == null) {
                 throw new IllegalArgumentException("time-window arg must not be null");
             }
-            this.timeWindow = tw;
-            this.timeWindows = new TimeWindowsImpl();
+            timeWindow = tw;
+            timeWindows = new TimeWindowsImpl();
             timeWindows.add(tw);
             return this;
         }
 
-        public Builder<T> addTimeWindow(TimeWindow timeWindow) {
+        public Builder addTimeWindow(TimeWindow timeWindow) {
             if(timeWindow == null) {
                 throw new IllegalArgumentException("time-window arg must not be null");
             }
@@ -180,7 +177,7 @@ public class Service extends AbstractJob implements SelfJobActivityFactory {
             return this;
         }
 
-        public Builder<T> addTimeWindow(double earliest, double latest) {
+        public Builder addTimeWindow(double earliest, double latest) {
             return addTimeWindow(TimeWindow.newInstance(earliest, latest));
         }
 
@@ -190,34 +187,34 @@ public class Service extends AbstractJob implements SelfJobActivityFactory {
          * @return {@link Service}
          * @throws IllegalArgumentException if neither locationId nor coordinate is set.
          */
-        public T build() {
+        public Service build() {
             if (location == null) {
                 throw new IllegalArgumentException("location is missing");
             }
-            this.setType("service");
+            setType("service");
             capacity = capacityBuilder.build();
             skills = skillBuilder.build();
-            return (T) new Service(this);
+            return new Service(this);
         }
 
-        public Builder<T> addRequiredSkill(String skill) {
+        public Builder addRequiredSkill(String skill) {
             skillBuilder.addSkill(skill);
             return this;
         }
 
-        public Builder<T> setName(String name) {
+        public Builder setName(String name) {
             this.name = name;
             return this;
         }
 
-        public Builder<T> addAllRequiredSkills(Skills skills){
+        public Builder addAllRequiredSkills(Skills skills) {
             for(String s : skills.values()){
                 skillBuilder.addSkill(s);
             }
             return this;
         }
 
-        public Builder<T> addAllSizeDimensions(Capacity size){
+        public Builder addAllSizeDimensions(Capacity size) {
             for(int i=0;i<size.getNuOfDimensions();i++){
                 capacityBuilder.addDimension(i,size.get(i));
             }
@@ -232,7 +229,7 @@ public class Service extends AbstractJob implements SelfJobActivityFactory {
          * @param priority
          * @return builder
          */
-        public Builder<T> setPriority(int priority) {
+        public Builder setPriority(int priority) {
             if(priority < 1 || priority > 3) {
                 throw new IllegalArgumentException("incorrect priority. only 1 = high, 2 = medium and 3 = low is allowed");
             }
@@ -394,9 +391,9 @@ public class Service extends AbstractJob implements SelfJobActivityFactory {
     }
 
     @Override
-    public List<AbstractActivity> createActivities() {
-        List<AbstractActivity> acts = new ArrayList<AbstractActivity>();
-        acts.add(new PickupService(this));
+    public List<JobActivityBase> getActivities() {
+        List<JobActivityBase> acts = new ArrayList<>();
+        acts.add(new NewServiceAbility(this, "Service", getLocation(), getServiceDuration(), Capacity.createNullCapacity(getSize().getNuOfDimensions())));
         return acts;
     }
 

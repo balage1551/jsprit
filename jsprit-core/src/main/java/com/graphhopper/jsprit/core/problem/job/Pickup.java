@@ -72,7 +72,7 @@ public class Pickup extends Service {
     }
 
     @Override
-    public List<AbstractActivity> createActivities() {
+    public List<AbstractActivity> getActivities() {
         // This is technically not needed, but make it safer to change the default implementation in Service
         List<AbstractActivity> acts = new ArrayList<AbstractActivity>();
         acts.add(new PickupService(this));
